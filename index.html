@@ -486,8 +486,10 @@ async function ghEdit(fn,message){for(let n=0;n<3;n++){const {rows,sha}=await gh
  const r=await fetch(ghUrl,{method:'PUT',headers:ghHead(),body:JSON.stringify({message,branch:'main',content:b64e(csvOut(next)),...(sha?{sha}:{})})});
  if(r.ok)return next;if(r.status!==409&&r.status!==422)throw r.status}throw 409}
 async function ghConnect(tok){tok=tok.trim();if(!tok)return;
- try{const r=await fetch(`https://api.github.com/repos/${GH.repo}`,{headers:{Authorization:`Bearer ${tok}`}});if(!r.ok)throw 0;localStorage.setItem(GH.key,tok);toast('Connected. Logging is on for this device.');loadIntake()}
- catch(e){toast('That key cannot open tri-coach.')}}
+ try{const r=await fetch(ghUrl,{method:'PUT',headers:{Authorization:`Bearer ${tok}`,Accept:'application/vnd.github+json'},body:JSON.stringify({message:'probe',branch:'main',content:'',sha:'0'.repeat(40)})});
+  if(r.status===401)throw 'That key is not valid.';if(r.status===403||r.status===404)throw 'That key needs Contents: Read and write on tri-coach.';
+  localStorage.setItem(GH.key,tok);toast('Connected. Logging is on for this device.');loadIntake()}
+ catch(e){toast(typeof e==='string'?e:'Could not reach GitHub.')}}
 const dayTotals=s=>{const rs=INTAKE.filter(r=>r.date===s);return {rows:rs,protein:sum(rs.filter(r=>r.kind==='protein').map(r=>r.amount)),water:sum(rs.filter(r=>r.kind==='water').map(r=>r.amount))}};
 const DAYTYPES=[['Rest or easy day',3,5,'no session, or under 45 min easy'],['Training day',5,7,'46-119 min, or any key session'],['Long day',6,10,'2 h+ of training, or a double day']];
 function dayType(items){const m=trainMin(items);return m>=120?DAYTYPES[2]:m>45||items.some(i=>i.key)?DAYTYPES[1]:DAYTYPES[0]}
@@ -511,7 +513,7 @@ function renderFuel(){const items=planFor(TODAY),[name,g0,g1]=dayType(items),kg=
 const numRows=rs=>rs.map(x=>({...x,amount:+x.amount}));
 const refreshFuel=()=>{renderFuel();if(shown.nutrition)renderNutrition()};
 async function loadIntake(){MODE='';
- if(ghTok()){try{INTAKE=numRows((await ghRead()).rows);MODE='gh'}catch(e){toast(e===401?'GitHub key rejected. Paste a new one.':'Could not load the log from GitHub.')}}
+ if(ghTok()){try{INTAKE=numRows((await ghRead()).rows);MODE='gh'}catch(e){toast(e===401?'GitHub key rejected. Paste a new one.':e===403?'GitHub key needs Contents: Read and write on tri-coach.':'Could not load the log from GitHub.')}}
  else{try{const r=await fetch('api/intake',{cache:'no-store'});if(!r.ok)throw 0;INTAKE=numRows((await r.json()).rows);MODE='local'}catch(e){}}
  LIVE=!!MODE;refreshFuel()}
 async function addIntake(kind,amount,label){amount=Math.round(amount);if(!(amount>0&&amount<=(kind==='water'?3000:300)))return toast('Amount out of range.');
