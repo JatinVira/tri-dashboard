@@ -291,7 +291,7 @@ main{margin-left:0;padding-block:18px 100px}
  <div class="grid">
   <div class="card s12"><div class="card-h"><h2 id="wkTitle"></h2><div class="wknav"><button id="wkPrev" aria-label="Previous week">‹</button><button id="wkNow">This week</button><button id="wkNext" aria-label="Next week">›</button></div></div><p class="sub" id="wkSub"></p><div class="cal-wrap"><div class="cal" id="wkCal"></div></div></div>
   <div class="tiles s12" id="trTiles"></div>
-  <div class="card s6"><div class="card-h"><h2>Weekly hours by sport</h2><span class="sub">last 16 weeks</span></div><div class="chart"><canvas id="cHours" role="img" aria-label="Weekly training hours by sport, last 16 weeks"></canvas></div></div>
+  <div class="card s6"><div class="card-h"><h2>Weekly hours by sport</h2><span class="sub">last 12 weeks</span></div><div class="chart"><canvas id="cHours" role="img" aria-label="Weekly training hours by sport, last 12 weeks"></canvas></div></div>
   <div class="card s6"><div class="card-h"><h2>Easy share of heart-rate time</h2><span class="sub">target 80%</span></div><div class="chart"><canvas id="cEasy" role="img" aria-label="Weekly share of heart-rate time spent easy, target 80 percent"></canvas></div><div class="legend" id="lEasy"></div></div>
   <div class="card s8"><div class="card-h"><h2>Fitness and fatigue</h2><span class="sub">Garmin load, 42-day and 7-day averages</span></div><div class="chart"><canvas id="cLoad" role="img" aria-label="Fitness and fatigue over the last 120 days"></canvas></div></div>
   <div class="card s4"><div class="card-h"><h2>Load ratio</h2><span class="sub">fatigue ÷ fitness</span></div><div class="chart"><canvas id="cRatio" role="img" aria-label="Load ratio with safe range 0.8 to 1.3"></canvas></div></div>
@@ -559,9 +559,9 @@ function renderTrTiles(){const s=weekStats(monday(TODAY)),L=D.load,last=L.at(-1)
   tile('Easy share',e==null?'-':`${num(e)}<small>%</small>`,'heart-rate time, 28 days, target 80%',eT,spark(D.weeks.slice(-8).map(w=>w.easy),V)),
   tile('Fitness',num(last[1]),`${dF>=0?'+':''}${dF.toFixed(1)} vs 7 days ago`,'',spark(L.slice(-42).map(r=>r[1]),V)),
   tile('Load ratio',num(ratio,2),'safe range 0.8-1.3',rT,spark(L.slice(-42).map(r=>r[1]?r[2]/r[1]:null),V))].join('')}
-function renderTrCharts(){const W=D.weeks,lab=W.map(w=>dateLab(w.week));
- new Chart($('cHours'),{type:'bar',data:{labels:lab,datasets:['swim','bike','run','strength','other'].map(k=>({label:cap(k),data:W.map(w=>w[k]),backgroundColor:COL[k],borderColor:SURF,borderWidth:{top:2},borderSkipped:'bottom',borderRadius:4,maxBarThickness:30}))},
-  options:{plugins:{tooltip:{filter:i=>i.raw>0,callbacks:{title:c=>c.length?`Week of ${lab[c[0].dataIndex]}`:'',label:c=>` ${c.dataset.label}: ${c.raw.toFixed(1)} h`,footer:c=>c.length?`Total ${W[c[0].dataIndex].total.toFixed(1)} h`:''}}},scales:{x:{...xCat,stacked:true},y:yLin({stacked:true,title:{display:true,text:'hours'}})}}});
+function renderTrCharts(){const W=D.weeks,lab=W.map(w=>dateLab(w.week)),H=W.slice(-12),hLab=lab.slice(-12);
+ new Chart($('cHours'),{type:'bar',data:{labels:hLab,datasets:['swim','bike','run','strength','other'].map(k=>({label:cap(k),data:H.map(w=>w[k]),backgroundColor:COL[k],borderColor:SURF,borderWidth:{top:2},borderSkipped:'bottom',borderRadius:4,maxBarThickness:30}))},
+  options:{plugins:{tooltip:{filter:i=>i.raw>0,callbacks:{title:c=>c.length?`Week of ${hLab[c[0].dataIndex]}`:'',label:c=>` ${c.dataset.label}: ${c.raw.toFixed(1)} h`,footer:c=>c.length?`Total ${H[c[0].dataIndex].total.toFixed(1)} h`:''}}},scales:{x:{...xCat,stacked:true},y:yLin({stacked:true,title:{display:true,text:'hours'}})}}});
  const eCol=v=>v==null?GRID:v>=80?ST.go:v>=60?ST.easy:ST.rest;
  new Chart($('cEasy'),{type:'bar',data:{labels:lab,datasets:[{...target('Target 80%',80,W.length),order:0},{label:'Easy share',data:W.map(w=>w.easy),backgroundColor:W.map(w=>eCol(w.easy)),borderRadius:4,maxBarThickness:30,order:1}]},
   options:{plugins:{legend:{display:false},tooltip:{filter:i=>i.datasetIndex===1,callbacks:{title:c=>c.length?`Week of ${lab[c[0].dataIndex]}`:'',label:c=>c.raw==null?' no HR data':` ${c.raw}% easy: ${c.raw>=80?'on target':c.raw>=60?'close':'below target'}`}}},scales:{x:xCat,y:yLin({min:0,max:100,ticks:{stepSize:20,callback:v=>v+'%'}})}}});
